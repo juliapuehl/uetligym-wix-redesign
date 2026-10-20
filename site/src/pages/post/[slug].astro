@@ -1,0 +1,35 @@
+---
+// Blogbeitrag: /post/<slug> (gleiche Adresse wie bei Wix-Blogs üblich).
+import Layout from "../../layouts/Layout.astro";
+import { fetchPostBySlug, formatPostDate } from "../../lib/wix";
+
+const slug = Astro.params.slug || "";
+let post = null;
+let failed = false;
+try { post = await fetchPostBySlug(slug); } catch (e) { console.error(e); failed = true; }
+if (!post) Astro.response.status = failed ? 500 : 404;
+---
+<Layout
+  title={post ? `${post.title} – Uetligym` : "Beitrag nicht gefunden – Uetligym"}
+  description={post?.excerpt || "Tipps, Hintergründe und News aus dem Uetligym."}
+  image={post?.cover}
+>
+  <section class="section intro">
+    <div class="wrap stack">
+      <a class="link-turq" href="/blog">← Alle Beiträge</a>
+      {post
+        ? <><h1>{post.title}</h1><span class="muted">{formatPostDate(post.date)}</span></>
+        : <h1>{failed ? "Der Beitrag konnte nicht geladen werden" : "Beitrag nicht gefunden"}</h1>}
+    </div>
+  </section>
+  {post && (
+    <section class="section end">
+      <div class="wrap">
+        <article class="article">
+          {post.cover && <div class="ph"><img src={post.cover} alt="" /></div>}
+          {post.paragraphs.map((t) => <p>{t}</p>)}
+        </article>
+      </div>
+    </section>
+  )}
+</Layout>

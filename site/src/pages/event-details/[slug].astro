@@ -1,0 +1,139 @@
+---
+// Event-Detailseite: /event-details/<slug> – dieselbe Adresse, die Wix Events in E-Mails verwendet.
+// Titel, Text, Bild, Ort und Anmeldung kommen aus Wix Events (Dashboard → Events).
+import { WIX_APPS } from "@wix/essentials";
+import Layout from "../../layouts/Layout.astro";
+import { fetchEventBySlug, evDateLine } from "../../lib/events.js";
+
+// Registriert die Route für Wix (Sitemap, SEO-Einstellungen und Event-Links).
+export const wixMetadata = {
+  appDefId: WIX_APPS.events.id,
+  pageIdentifier: WIX_APPS.events.eventPageMetadata.pageIdentifier,
+  identifiers: { slug: WIX_APPS.events.eventPageMetadata.identifiers.slug },
+};
+
+const slug = Astro.params.slug || "";
+let ev: any = null;
+let failed = false;
+try { ev = await fetchEventBySlug(slug); } catch (e) { console.error(e); failed = true; }
+if (!ev) Astro.response.status = failed ? 500 : 404;
+const place = ev ? [ev.locationName, ev.address].filter(Boolean).join(", ") : "";
+---
+<Layout
+  title={ev ? `${ev.title} – Uetligym` : "Event nicht gefunden – Uetligym"}
+  description={ev?.shortDescription || "Community-Events im Uetligym."}
+  image={ev?.imageUrl}
+>
+  <section class="section intro event-head">
+    <div class="wrap stack">
+      <a class="back-link" href="/community#events">← Alle Events</a>
+      {ev
+        ? <><h1>{ev.title}</h1>{ev.shortDescription && <p class="lead">{ev.shortDescription}</p>}</>
+        : <><h1>{failed ? "Das Event konnte nicht geladen werden" : "Event nicht gefunden"}</h1><p class="lead">Schau dir unsere anderen Community-Events an.</p></>}
+    </div>
+  </section>
+
+  {ev && (
+    <section class="section tight end">
+      <div class="wrap event-layout">
+        <div class="event-main">
+          {ev.imageUrl && <div class="ph event-hero"><img src={ev.imageUrl} alt={ev.title} /></div>}
+          <div class="event-meta">
+            <div class="meta-row"><span class="meta-k">Wann</span><span>{evDateLine(ev)}</span></div>
+            {place && <div class="meta-row"><span class="meta-k">Wo</span><span>{place}</span></div>}
+            {ev.status === "ENDED" && <div class="meta-row"><span class="meta-k">Status</span><span>Dieses Event hat bereits stattgefunden.</span></div>}
+          </div>
+          <div class="event-text">{ev.paragraphs.map((p: string) => <p>{p}</p>)}</div>
+        </div>
+        <aside class="card white event-rsvp" id="ev-rsvp" aria-labelledby="ev-rsvp-title"></aside>
+      </div>
+      <script type="application/json" id="ev-data" set:html={JSON.stringify(ev).replace(/</g, "\\u003c")} />
+    </section>
+  )}
+
+  <Fragment slot="scripts">
+    <script>
+    // Anmeldung (RSVP) mit dem Formular des Veranstalters. Die Regeln (Formular, Pflichtfelder,
+    // Anfrage, Fehlertexte) kommen aus derselben Datei wie auf dem Server: src/lib/events-core.js.
+    // wixRequest und escapeHtml stellt public/assets/site.js bereit (im Layout geladen).
+    import { evRsvpFormOf, evBuiltInInputs, evCanSubmit, evRsvpBody, evErrorMessage } from "../../lib/events-core.js";
+
+    // POST /events/v2/rsvps { rsvp: {…} } → { rsvp: { id, status } }. "WAITLIST" wenn ausgebucht mit Warteliste.
+    async function submitRsvp(ev, values, guests) {
+      const res = await wixRequest("/events/v2/rsvps", { body: { rsvp: evRsvpBody(ev.id, evRsvpFormOf(ev), values, "YES", guests) } });
+      return res && res.rsvp && res.rsvp.status === "WAITLIST" ? "WAITLIST" : "YES";
+    }
+
+    (function () {
+      var data = document.getElementById("ev-data");
+      if (!data) return;
+      var ev = JSON.parse(data.textContent);
+      var LABELS = { firstName: "Vorname", lastName: "Nachname", email: "E-Mail" };
+
+      function inputHtml(i) {
+        var id = "f-" + i.name.replace(/[^\w-]/g, "_");
+        var label = LABELS[i.name] || i.label;
+        var req = i.mandatory ? " required" : "";
+        var ph = escapeHtml(label) + (i.mandatory ? " *" : "");
+        var max = i.maxLength ? ' maxlength="' + i.maxLength + '"' : "";
+        if (i.options.length) {
+          return '<label class="sr-only" for="' + id + '">' + escapeHtml(label) + '</label><select class="field" id="' + id + '" name="' + escapeHtml(i.name) + '"' + req + '>' +
+            '<option value="">' + ph + '</option>' + i.options.map(function (o) { return '<option>' + escapeHtml(o) + '</option>'; }).join("") + '</select>';
+        }
+        var type = i.name === "email" || /mail/i.test(i.name) ? "email" : i.type === "NUMBER" ? "number" : i.type === "DATE_TIME" ? "date" : "text";
+        return '<label class="sr-only" for="' + id + '">' + escapeHtml(label) + '</label><input class="field" id="' + id + '" type="' + type + '" name="' + escapeHtml(i.name) + '" placeholder="' + ph + '"' + max + req + '>';
+      }
+
+      function renderRsvp(ev) {
+        var box = document.getElementById("ev-rsvp");
+        var cal = (ev.googleCalendar ? '<a class="link-turq" href="' + escapeHtml(ev.googleCalendar) + '" target="_blank" rel="noopener">Google Kalender</a>' : '') +
+          (ev.icsUrl ? '<a class="link-turq" href="' + escapeHtml(ev.icsUrl) + '">Kalenderdatei (.ics)</a>' : '');
+        var calHtml = cal ? '<div class="event-cal"><span class="muted">In deinen Kalender:</span>' + cal + '</div>' : '';
+        if (ev.registrationType === "TICKETING") {
+          box.innerHTML = '<h2 id="ev-rsvp-title">Tickets</h2><p class="body" style="margin:0">Tickets für dieses Event kannst du bald online kaufen. Bis dahin melde dich gern bei uns.</p>' +
+            '<a class="btn oak" href="/kontakt?kurs=' + encodeURIComponent(ev.title) + '">Kontakt aufnehmen</a>' + calHtml;
+          return;
+        }
+        if (!ev.registrationOpen) {
+          box.innerHTML = '<h2 id="ev-rsvp-title">Anmeldung</h2><p class="body" style="margin:0">' +
+            (ev.registrationClosed ? "Die Anmeldung für dieses Event ist geschlossen." : "Für dieses Event ist keine Online-Anmeldung nötig – komm einfach vorbei.") + '</p>' + calHtml;
+          return;
+        }
+        var form = evRsvpFormOf(ev);
+        var fields = form.controls.map(function (c) { return c.inputs.map(inputHtml).join(""); }).join("");
+        var guests = "";
+        if (form.guestControl && form.guestControl.maxGuests > 0) {
+          var opts = ""; for (var n = 0; n <= form.guestControl.maxGuests; n++) opts += '<option value="' + n + '">' + (n === 0 ? "Keine Begleitperson" : n + " Begleitperson" + (n > 1 ? "en" : "")) + '</option>';
+          guests = '<label class="sr-only" for="f-guests">Begleitpersonen</label><select class="field" id="f-guests" name="__guests">' + opts + '</select>';
+        }
+        box.innerHTML = '<h2 id="ev-rsvp-title">' + (ev.waitlistOnly ? "Auf die Warteliste" : "Jetzt anmelden") + '</h2>' +
+          '<p class="body" style="margin:0">Kostenlos – wir freuen uns auf dich!</p>' +
+          '<form class="form" id="rsvp-form" novalidate>' + fields + guests +
+          '<div><button class="btn oak" type="submit">Anmelden</button></div><p class="form-msg" id="rsvp-msg" role="status" aria-live="polite"></p></form>' + calHtml;
+        var f = document.getElementById("rsvp-form");
+        var msg = document.getElementById("rsvp-msg");
+        f.addEventListener("submit", function (e) {
+          e.preventDefault();
+          var values = {};
+          form.controls.forEach(function (c) { c.inputs.forEach(function (i) { var el = f.elements[i.name]; if (el) values[i.name] = el.value; }); });
+          var gc = f.elements["__guests"] ? Number(f.elements["__guests"].value) : 0;
+          msg.className = "form-msg";
+          if (!evCanSubmit(form, values, gc)) { msg.className = "form-msg err"; msg.textContent = "Bitte fülle alle Pflichtfelder (*) aus."; return; }
+          var mail = values[evBuiltInInputs(form).email] || "";
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) { msg.className = "form-msg err"; msg.textContent = "Bitte gib eine gültige E-Mail-Adresse an."; return; }
+          var btn = f.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Wird gesendet …";
+          submitRsvp(ev, values, { guestCount: gc, guestNames: [] }).then(function (st) {
+            box.innerHTML = '<h2 id="ev-rsvp-title">' + (st === "WAITLIST" ? "Du bist auf der Warteliste" : "Du bist dabei!") + '</h2>' +
+              '<p class="body" style="margin:0">' + (st === "WAITLIST" ? "Wir melden uns, sobald ein Platz frei wird." : "Wir haben dir eine Bestätigung per E-Mail geschickt.") + '</p>' + calHtml;
+          }).catch(function (err) {
+            msg.className = "form-msg err"; msg.textContent = evErrorMessage(err);
+            btn.disabled = false; btn.textContent = "Anmelden";
+          });
+        });
+      }
+
+      renderRsvp(ev);
+    })();
+    </script>
+  </Fragment>
+</Layout>

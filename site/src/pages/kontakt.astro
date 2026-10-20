@@ -1,0 +1,85 @@
+---
+// Das Kontaktformular sendet an Wix Forms (Dashboard → Formulare → Kontakt).
+import Layout from "../layouts/Layout.astro";
+import { CONTACT_FORM } from "../lib/config";
+---
+<Layout title="Kontakt – Uetligym" description="Schreib uns oder komm vorbei – Kontakt, Anfahrt und FAQ des Uetligym." nav="kontakt">
+  <section class="section intro">
+    <div class="wrap stack">
+      <h1>Kontakt</h1>
+      <p class="lead">Fragen? Schreib uns oder komm einfach vorbei.</p>
+    </div>
+  </section>
+
+  <section class="section" id="social">
+    <div class="wrap contact-grid">
+      <div class="contact-form-col">
+        <h2 class="only-m">Kontaktformular</h2>
+        <form class="form" id="contact" novalidate data-form-id={CONTACT_FORM.id} data-fields={JSON.stringify(CONTACT_FORM.fields)}>
+          <input class="field" name="name" type="text" placeholder="Name" aria-label="Name" autocomplete="name" required>
+          <input class="field" name="email" type="email" placeholder="E-Mail" aria-label="E-Mail" autocomplete="email" required>
+          <textarea class="field" name="message" rows="1" placeholder="Nachricht" aria-label="Nachricht" required></textarea>
+          <div><button class="btn oak" type="submit">Senden</button></div>
+          <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+        </form>
+        <div class="only-m" style="padding-top:18px">
+        <div class="social">
+          <a class="ig" href="#" aria-label="Instagram">IG</a>
+          <a class="fb" href="#" aria-label="Facebook">FB</a>
+          <a class="tt" href="#" aria-label="TikTok">TT</a>
+        </div>
+        </div>
+      </div>
+      <div class="contact-loc-col">
+        <h2>Hier findest du uns</h2>
+        <a class="ph map" href="https://www.google.com/maps/search/?api=1&query=Uetligym%20Z%C3%BCrich" target="_blank" rel="noopener"><img src="https://static.wixstatic.com/media/6b26aa_d1eb55124cdd493bb4984f75684b48ed~mv2.png" alt="Karte: Uetligym in Zürich – in Google Maps öffnen" loading="lazy"></a>
+        <div class="only-d">
+        <div class="social">
+          <a class="ig" href="#" aria-label="Instagram">IG</a>
+          <a class="fb" href="#" aria-label="Facebook">FB</a>
+          <a class="tt" href="#" aria-label="TikTok">TT</a>
+        </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight end faq-section">
+    <div class="wrap stack" style="gap:0">
+      <h2>FAQ</h2>
+      <div class="faq">
+        <details><summary>Abos &amp; Preise</summary><div class="a">Du wählst zwischen Token-Paketen (10er für CHF 280.-, 40er für CHF 980.-) und dem Jahresabo für CHF 145.- pro Monat. Für den Einstieg gibt es das Newcomer Offer (4 für 2) für CHF 49.-. Alle Details findest du unter <a class="link-turq" href="/preise">Preise</a>.</div></details>
+        <details><summary>Buchung &amp; Anmeldung</summary><div class="a">Mit deinem Paket buchst du Kurse flexibel online. Fragen zur Anmeldung beantworten wir dir gern über das Kontaktformular.</div></details>
+        <details><summary>Trainieren im Studio</summary><div class="a">Neben Gruppenkursen kannst du im Open Gym frei trainieren. Die aktuellen Zeiten stehen im <a class="link-turq" href="/angebot#stundenplan">Stundenplan</a>.</div></details>
+      </div>
+    </div>
+  </section>
+  <script is:inline slot="scripts">
+    (function () {
+      var form = document.getElementById("contact");
+      var FORM_ID = form.dataset.formId;
+      var T = JSON.parse(form.dataset.fields);
+      var msg = document.getElementById("form-msg");
+      var params = new URLSearchParams(location.search);
+      var topic = params.get("kurs") || params.get("paket");
+      var F = form.elements;
+      if (topic) F["message"].value = "Ich interessiere mich für: " + topic;
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        msg.className = "form-msg"; msg.textContent = "";
+        var name = F["name"].value.trim(), email = F["email"].value.trim(), message = F["message"].value.trim();
+        if (!name || !email || !message) { msg.className = "form-msg err"; msg.textContent = "Bitte fülle alle Felder aus."; return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = "form-msg err"; msg.textContent = "Bitte gib eine gültige E-Mail-Adresse an."; return; }
+        var btn = form.querySelector("button[type=submit]");
+        btn.disabled = true; btn.textContent = "Senden …";
+        var values = {}; values[T.name] = name; values[T.email] = email; values[T.message] = message;
+        createSubmission(FORM_ID, values).then(function () {
+          form.reset();
+          msg.className = "form-msg ok"; msg.textContent = "Danke! Deine Nachricht ist bei uns angekommen.";
+        }).catch(function () {
+          msg.className = "form-msg err"; msg.textContent = "Das hat leider nicht geklappt. Bitte versuche es nochmals.";
+        }).finally(function () { btn.disabled = false; btn.textContent = "Senden"; });
+      });
+    })();
+  </script>
+</Layout>

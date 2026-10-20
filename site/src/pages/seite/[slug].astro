@@ -1,0 +1,101 @@
+---
+// Landingpage-Vorlage: /seite/<URL-Name>. Inhalt aus dem CMS (Tabelle "Landingpages").
+// Jeder Baustein erscheint nur, wenn seine Felder ausgefüllt sind.
+import Layout from "../../layouts/Layout.astro";
+import Media from "../../components/Media.astro";
+import { queryCollection, mediaOf, imgSrc, safeRich, hasText, safeLink } from "../../lib/wix";
+
+const slug = Astro.params.slug || "";
+let p: any = null;
+let failed = false;
+try {
+  [p] = await queryCollection("Landingpages", {
+    filter: { $and: [{ slug: { $eq: slug } }, { sichtbar: { $eq: true } }] },
+    paging: { limit: 1, offset: 0 },
+  });
+} catch (e) { console.error(e); failed = true; }
+if (!p) Astro.response.status = failed ? 500 : 404;
+
+const hero = p ? mediaOf(p.heroMedium) : null;
+const introBtn = p && p.buttonText && safeLink(p.buttonLink) ? { text: p.buttonText, href: safeLink(p.buttonLink) } : null;
+const showIntro = p && (hasText(p.intro) || introBtn);
+const showBildText = p && (p.bildTextTitel || hasText(p.bildTextText));
+const btImage = p ? imgSrc(p.bildTextBild, 1000, 680) : "";
+const vorteile: string[] = p && Array.isArray(p.vorteile) ? p.vorteile.map(String).filter((x: string) => x.trim()) : [];
+const showAngebot = p && (p.angebotTitel || p.angebotPreis);
+const offerBtn = p && p.angebotButtonText && safeLink(p.angebotButtonLink) ? { text: p.angebotButtonText, href: safeLink(p.angebotButtonLink) } : null;
+const ogImage = hero?.kind === "image" ? imgSrc(hero.src, 1200, 630) : hero?.kind === "video" ? hero.poster : undefined;
+---
+<Layout
+  title={p ? `${p.titel || "Uetligym"} – Uetligym` : "Seite nicht gefunden – Uetligym"}
+  description={p?.seoBeschreibung || p?.untertitel || undefined}
+  image={ogImage}
+>
+  {!p && (
+    <section class="section intro">
+      <div class="wrap stack">
+        {failed
+          ? <><h1>Die Seite konnte nicht geladen werden</h1><p class="lead">Bitte versuche es später nochmals.</p></>
+          : <><h1>Seite nicht gefunden</h1><p class="lead">Diese Seite gibt es nicht (mehr).</p><a class="btn oak" href="/">Zur Startseite</a></>}
+      </div>
+    </section>
+  )}
+
+  {p && (
+    <>
+      <section class={"lp-hero" + (hero ? "" : " no-media")}>
+        <div class="lp-media">{hero && <Media media={hero} w={1920} h={960} desktop alt={p.titel || ""} />}</div>
+        <div class="wrap lp-hero-text">
+          <h1>{p.titel}</h1>
+          {p.untertitel && <p class="lp-sub">{p.untertitel}</p>}
+        </div>
+      </section>
+
+      {showIntro && (
+        <section class="section lp-intro">
+          <div class="wrap stack">
+            {hasText(p.intro) && <div class="rich" set:html={safeRich(p.intro)} />}
+            {introBtn && <a class="btn oak" href={introBtn.href}>{introBtn.text}</a>}
+          </div>
+        </section>
+      )}
+
+      {showBildText && (
+        <section class="section">
+          <div class="wrap split">
+            {btImage && <div class="ph wide"><img src={btImage} alt={p.bildTextTitel || ""} loading="lazy" /></div>}
+            <div class="split-text">
+              {p.bildTextTitel && <h2>{p.bildTextTitel}</h2>}
+              <div class="rich" set:html={safeRich(p.bildTextText)} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {vorteile.length > 0 && (
+        <section class="section">
+          <div class="wrap stack">
+            <h2>{p.vorteileTitel || "Deine Vorteile"}</h2>
+            <div class="checks">
+              {vorteile.map((x) => <div class="check"><span class="tick">✓</span><span>{x}</span></div>)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {showAngebot && (
+        <section class="section end">
+          <div class="wrap">
+            <div class="lp-offer">
+              <span class="tag">Angebot</span>
+              <span class="name">{p.angebotTitel}</span>
+              <span class="amount">{p.angebotPreis}</span>
+              {p.angebotText && <p>{p.angebotText}</p>}
+              {offerBtn && <a class="btn dark" href={offerBtn.href}>{offerBtn.text}</a>}
+            </div>
+          </div>
+        </section>
+      )}
+    </>
+  )}
+</Layout>

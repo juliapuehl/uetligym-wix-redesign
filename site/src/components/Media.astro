@@ -1,0 +1,20 @@
+---
+// Renders a CMS image or video (first entry of a media field). Videos play muted in a loop;
+// several renditions are listed so the browser falls back when one doesn't exist.
+import { imgSrc, videoSources, type HeroMedia } from "../lib/wix";
+
+interface Props {
+  media: HeroMedia;
+  w: number;
+  h: number;
+  desktop?: boolean;
+  class?: string;
+  alt?: string;
+}
+const { media, w, h, desktop = false, class: cls, alt = "" } = Astro.props;
+---
+{media.kind === "image"
+  ? <img class={cls} src={imgSrc(media.src, w, h)} alt={media.title || alt} />
+  : <video class={cls} muted loop playsinline autoplay preload="metadata" aria-hidden="true" poster={media.poster} data-reduce-motion>
+      {videoSources(media.id, desktop).map((src) => <source src={src} type={src.endsWith("/file") ? undefined : "video/mp4"} />)}
+    </video>}

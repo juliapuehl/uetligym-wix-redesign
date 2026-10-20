@@ -1,0 +1,89 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+<Layout title="Preise – Uetligym" description="Token-Pakete, Jahresabo und Newcomer Offer – mit Preis-Kalkulator." nav="preise">
+  <section class="section intro">
+    <div class="wrap stack">
+      <h1>Preise</h1>
+      <p class="lead">Faire Preise, maximale Flexibilität – wähle was zu dir passt.</p>
+      <div class="card beige outline"><p style="margin:0">Token geben dir maximale Flexibilität: lange Gültigkeit, buche wann du willst.</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap stack">
+      <h2>So funktioniert's</h2>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><span>Wähle dein Paket</span></div>
+        <div class="step"><span class="num">2</span><span>Buche Kurse online</span></div>
+        <div class="step"><span class="num">3</span><span>Trainiere flexibel</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap stack">
+      <h2>Preis-Kalkulator</h2>
+      <div class="calc">
+        <div class="calc-controls">
+          <div class="calc-row"><span>Klassen / Woche</span>
+            <div class="stepper"><button type="button" data-k="n" data-d="-1" aria-label="weniger">−</button><span id="n">3</span><button type="button" data-k="n" data-d="1" aria-label="mehr">+</button></div>
+          </div>
+          <div class="calc-row"><span>Trainingsziel</span>
+            <div class="stepper"><button type="button" data-k="g" data-d="-1" aria-label="vorheriges Ziel">−</button><span id="g">Strength</span><button type="button" data-k="g" data-d="1" aria-label="nächstes Ziel">+</button></div>
+          </div>
+        </div>
+        <div class="result" aria-live="polite"><span class="lbl">Ergebnis</span><span class="val" id="val">CHF 145.-/Monat</span><span class="hint" id="hint">Jahresabo</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight end">
+    <div class="wrap stack" style="gap:12px">
+      <h2>Übersicht</h2>
+      <div class="prices">
+        <div class="price featured" id="newcomer">
+          <img class="bg" src="https://static.wixstatic.com/media/6b26aa_7dc831949e474998832dd820df5886a5~mv2.png/v1/fill/w_670,h_300,al_c,q_90/6b26aa_7dc831949e474998832dd820df5886a5~mv2.png" alt="" aria-hidden="true">
+          <span class="tag">Beliebt</span>
+          <span class="name">Newcomer Offer (4 für 2)</span>
+          <span class="amount">CHF 49.-</span>
+          <a class="btn dark sm" href="/kontakt?paket=Newcomer%20Offer">Kaufen</a>
+        </div>
+        <div class="price"><span class="name">10er Token Paket</span><span class="amount">CHF 280.-</span><a class="btn turq sm" href="/kontakt?paket=10er%20Token%20Paket">Kaufen</a></div>
+        <div class="price"><span class="name">40er Token Paket</span><span class="amount">CHF 980.-</span><a class="btn turq sm" href="/kontakt?paket=40er%20Token%20Paket">Kaufen</a></div>
+        <div class="price"><span class="name">Jahresabo</span><span class="amount">CHF 145.-/Mt</span><a class="btn turq sm" href="/kontakt?paket=Jahresabo">Kaufen</a></div>
+      </div>
+    </div>
+  </section>
+  <script is:inline slot="scripts">
+    // Preis-Kalkulator: compares the monthly cost of the packages above for the chosen classes per week.
+    (function () {
+      var GOALS = ["Strength", "Hyrox", "Kettlebells", "Open Gym"];
+      var OPTIONS = [
+        { name: "10er Token Paket", perClass: 280 / 10 },
+        { name: "40er Token Paket", perClass: 980 / 40 },
+        { name: "Jahresabo", monthly: 145 }
+      ];
+      var state = { n: 3, g: 0 };
+      function chf(x) { return "CHF " + Math.round(x) + ".-/Monat"; }
+      function render() {
+        document.getElementById("n").textContent = state.n;
+        document.getElementById("g").textContent = GOALS[state.g];
+        var perMonth = state.n * 52 / 12;
+        var best = OPTIONS.map(function (o) { return { name: o.name, cost: o.monthly != null ? o.monthly : o.perClass * perMonth }; })
+          .sort(function (a, b) { return a.cost - b.cost; })[0];
+        document.getElementById("val").textContent = chf(best.cost);
+        document.getElementById("hint").textContent = best.name + " · " + GOALS[state.g];
+      }
+      document.querySelectorAll(".stepper button").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var d = Number(b.dataset.d);
+          if (b.dataset.k === "n") state.n = Math.min(7, Math.max(1, state.n + d));
+          else state.g = (state.g + d + GOALS.length) % GOALS.length;
+          render();
+        });
+      });
+      render();
+    })();
+  </script>
+</Layout>

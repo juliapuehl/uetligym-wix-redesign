@@ -1,0 +1,33 @@
+---
+// Blog-Übersicht. Beiträge im Dashboard unter Blog schreiben.
+import Layout from "../layouts/Layout.astro";
+import { fetchPosts, formatPostDate, safe } from "../lib/wix";
+
+const posts = await safe(fetchPosts(20), null);
+---
+<Layout title="Blog – Uetligym" description="Tipps, Hintergründe und News aus dem Uetligym.">
+  <section class="section intro">
+    <div class="wrap stack">
+      <h1>Blog</h1>
+      <p class="lead">Tipps, Hintergründe und News aus dem Uetligym.</p>
+    </div>
+  </section>
+  <section class="section end">
+    <div class="wrap">
+      {posts === null
+        ? <p class="state">Beiträge konnten nicht geladen werden.</p>
+        : posts.length
+          ? <div class="posts">
+              {posts.map((p) => (
+                <a class="post-card" href={"/post/" + encodeURIComponent(p.slug)}>
+                  <div class="ph">{p.cover && <img src={p.cover} alt="" loading="lazy" />}</div>
+                  <span class="muted">{formatPostDate(p.date)}</span>
+                  <p class="title16">{p.title}</p>
+                  {p.excerpt && <p class="body" style="margin:0">{p.excerpt}</p>}
+                </a>
+              ))}
+            </div>
+          : <p class="state">Noch keine Beiträge.</p>}
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,90 @@
+---
+// Events kommen aus Wix Events, die Blog-Teaser aus Wix Blog (beides im Dashboard pflegen).
+import Layout from "../layouts/Layout.astro";
+import { fetchUpcomingEvents, fetchPosts, safe } from "../lib/wix";
+
+const [events, posts] = await Promise.all([safe(fetchUpcomingEvents(20), null), safe(fetchPosts(3), [])]);
+---
+<Layout title="Community – Uetligym" description="Community-Events, Team und Blog des Uetligym." nav="community">
+  <section class="section intro">
+    <div class="wrap stack">
+      <h1>Community</h1>
+      <p class="lead">Mehr als Training: Events, Menschen und gemeinsame Ziele.</p>
+    </div>
+  </section>
+
+  <section class="section" id="events">
+    <div class="wrap stack">
+      <h2>Upcoming Community Events</h2>
+      <div class="events" id="events-list">
+        {events === null
+          ? <p class="state">Events konnten nicht geladen werden.</p>
+          : events.length
+            ? events.map((e) => (
+                <a class="event" href={"/event-details/" + encodeURIComponent(e.slug)}>
+                  <div class="ph">{e.imageUrl && <img src={e.imageUrl} alt={e.title} loading="lazy" />}</div>
+                  <div class="txt"><p class="title16">{e.title}</p><span class="date">{e.date}</span></div>
+                </a>
+              ))
+            : <p class="state">Aktuell sind keine Events geplant – schau bald wieder vorbei.</p>}
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight past-section">
+    <div class="wrap stack">
+      <h2>Past Community Events</h2>
+      <div class="past">
+        <div><div class="ph"><img src="https://static.wixstatic.com/media/6b26aa_e7d3c4ce5b25448aae71f5dbc605e3a4~mv2.png/v1/fill/w_552,h_300,al_c,q_90/6b26aa_e7d3c4ce5b25448aae71f5dbc605e3a4~mv2.png" alt="Hyrox Simulation" loading="lazy"></div><span class="cap">Hyrox Simulation</span></div>
+        <div><div class="ph"><img src="https://static.wixstatic.com/media/6b26aa_f91a927bbeb44f1280db760af82bfe75~mv2.png/v1/fill/w_552,h_300,al_c,q_90/6b26aa_f91a927bbeb44f1280db760af82bfe75~mv2.png" alt="Run the Uetliberg" loading="lazy"></div><span class="cap">Run the Uetliberg</span></div>
+        <div><div class="ph shade"><img src="https://static.wixstatic.com/media/6b26aa_a6419e52865f413ebcbfdf8541563b80~mv2.png/v1/fill/w_552,h_300,al_c,q_90/6b26aa_a6419e52865f413ebcbfdf8541563b80~mv2.png" alt="Summer BBQ" loading="lazy"></div><span class="cap">Summer BBQ</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap stack">
+      <h2>Get to know us</h2>
+      <div class="ph team"><img src="https://static.wixstatic.com/media/6b26aa_e72cab8b5a1947d0a6ff8be0c23addb9~mv2.png" alt="Das Uetligym-Team" loading="lazy"></div>
+      <div class="avatars sm">
+        <img src="https://static.wixstatic.com/media/6b26aa_fab9a1bda2a5417596720e55692f4073~mv2.png" alt="Teammitglied" loading="lazy">
+        <img src="https://static.wixstatic.com/media/6b26aa_1e57303492d745baa8842ce5ff18fa7a~mv2.png" alt="Teammitglied" loading="lazy">
+        <img src="https://static.wixstatic.com/media/6b26aa_eb9ae0e3964c4aa9bf02e041a10c6c78~mv2.png" alt="Teammitglied" loading="lazy">
+        <img src="https://static.wixstatic.com/media/6b26aa_08b776d3b1394ebb83da8296a3da46f8~mv2.png" alt="Teammitglied" loading="lazy">
+        <img src="https://static.wixstatic.com/media/6b26aa_72d1e62fa5c144dfa1fde030538f4a5e~mv2.png" alt="Teammitglied" loading="lazy">
+        <img src="https://static.wixstatic.com/media/6b26aa_11b935e721bf4548899fbe2894fc1bf5~mv2.png" alt="Teammitglied" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap stack">
+      <h2>Warum Uetligym</h2>
+      <div class="why">
+        <div class="check"><span class="tick">✓</span><div><p class="title16">Moderne Geräte</p><span class="sub">Top ausgestattetes Studio</span></div></div>
+        <div class="check"><span class="tick">✓</span><div><p class="title16">Echte Community</p><span class="sub">Nie allein trainieren</span></div></div>
+        <div class="check"><span class="tick">✓</span><div><p class="title16">Flexible Preise</p><span class="sub">Token statt starrer Abos</span></div></div>
+        <div class="check"><span class="tick">✓</span><div><p class="title16">Erfahrene Trainer</p><span class="sub">Individuelle Betreuung</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight end">
+    <div class="wrap stack">
+      <h2>Blog</h2>
+      <div class="blog-teasers" id="blog-teasers">
+        {posts.length
+          ? posts.map((p, i) => (
+              <a class={"teaser" + (i === 2 ? " only-d" : "")} href={"/post/" + encodeURIComponent(p.slug)}>
+                <div class="ph">
+                  {p.cover && <picture><source media="(min-width: 900px)" srcset={p.cover} /><img src={p.thumb || p.cover} alt="" loading="lazy" /></picture>}
+                </div>
+                <span class="t">{p.title}</span>
+              </a>
+            ))
+          : <p class="state">Noch keine Beiträge.</p>}
+      </div>
+      <a class="link-oak" href="/blog">Zum Blog →</a>
+    </div>
+  </section>
+</Layout>

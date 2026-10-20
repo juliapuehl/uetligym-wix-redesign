@@ -1,0 +1,122 @@
+---
+// Kurse und Stundenplan kommen aus dem CMS (Dashboard → CMS → "Kurse" / "Stundenplan").
+import Layout from "../layouts/Layout.astro";
+import { queryCollection, imgSrc, safe } from "../lib/wix";
+
+const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+type Slot = { start: string; ende: string; kurs: string };
+
+const [kursItems, planItems] = await Promise.all([
+  safe(queryCollection("Kurse", { sort: [{ fieldName: "reihenfolge", order: "ASC" }] }), []),
+  safe(queryCollection("Stundenplan", { sort: [{ fieldName: "start", order: "ASC" }], paging: { limit: 500, offset: 0 } }), []),
+]);
+const kurse = kursItems.filter((k) => k.titel);
+const byDay: Record<string, Slot[]> = Object.fromEntries(DAYS.map((d) => [d, []]));
+for (const s of planItems) {
+  let d = String(s.tag || "").trim().slice(0, 2);
+  d = d.charAt(0).toUpperCase() + d.slice(1).toLowerCase();
+  if (!byDay[d] || !s.kurs) continue;
+  byDay[d].push({ start: String(s.start || "").trim(), ende: String(s.ende || "").trim(), kurs: s.kurs });
+}
+for (const d of DAYS) byDay[d].sort((a, b) => a.start.localeCompare(b.start));
+const time = (s: Slot) => s.start + (s.ende ? "–" + s.ende : "");
+---
+<Layout title="Unser Angebot – Uetligym" description="Gruppenkurse, Stundenplan, Personal Training, Sauna und Ernährungsberatung im Uetligym." nav="angebot">
+  <section class="section intro">
+    <div class="wrap stack">
+      <h1>Unser Angebot</h1>
+      <p class="lead">Gruppenkurse, Personal Training und mehr – finde was zu dir passt.</p>
+    </div>
+  </section>
+
+  <section class="section" id="gruppenkurse">
+    <div class="wrap stack">
+      <h2>Gruppenkurse</h2>
+      <div class="class-row" id="kurse-list">
+        {kurse.length
+          ? kurse.map((k) => (
+              <div class="class-card">
+                <div class="ph">{imgSrc(k.bild, 532, 360) && <img src={imgSrc(k.bild, 532, 360)} alt={k.titel} loading="lazy" />}</div>
+                <p class="title16">{k.titel}</p>
+                <a class="btn oak sm" href={"/kontakt?kurs=" + encodeURIComponent(k.titel)}>Buchen</a>
+              </div>
+            ))
+          : <p class="state">Aktuell sind keine Kurse eingetragen.</p>}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="stundenplan">
+    <div class="wrap stack">
+      <h2>Stundenplan</h2>
+      <div class="days" role="tablist" aria-label="Wochentag">
+        {DAYS.map((d) => <button class="day" type="button" role="tab" data-day={d} aria-selected="false">{d}</button>)}
+      </div>
+      <div class="card white slots" id="slots" aria-live="polite">
+        {DAYS.map((d) => (
+          <div class="slots" data-slots={d} hidden>
+            {byDay[d].length
+              ? byDay[d].map((s) => <div class="slot"><span class="time">{time(s)}</span><span class="name">{s.kurs}</span></div>)
+              : <p class="state" style="margin:0">An diesem Tag finden keine Kurse statt.</p>}
+          </div>
+        ))}
+      </div>
+      <div class="week" id="week">
+        {DAYS.map((d) => (
+          <div class="week-day" data-week={d}>
+            <h3>{d}</h3>
+            {byDay[d].length
+              ? byDay[d].map((s) => <div class="week-slot"><span class="t">{time(s)}</span><span class="n">{s.kurs}</span></div>)
+              : <span class="week-empty">Keine Kurse</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="wrap link-cards">
+      <a class="link-card oak" href="/preise#newcomer">Newcomer Offer →</a>
+      <a class="link-card" href="/preise">Preise &amp; Pakete →</a>
+      <a class="link-card" href="/community#events">Community Events →</a>
+    </div>
+  </section>
+
+  <section class="section" id="personal-training">
+    <div class="wrap split pt">
+      <div class="ph wide"><img src="https://static.wixstatic.com/media/6b26aa_7dc831949e474998832dd820df5886a5~mv2.png" alt="Personal Training" loading="lazy"></div>
+      <div class="split-text">
+        <h2>Personal Training</h2>
+        <div class="check"><span class="tick">✓</span><span class="muted">1:1 Betreuung auf dein Ziel abgestimmt</span></div>
+        <div class="check"><span class="tick">✓</span><span class="muted">Flexible Terminwahl</span></div>
+        <div class="check"><span class="tick">✓</span><span class="muted">Erfahrene, zertifizierte Trainer</span></div>
+        <a class="btn oak" href="/kontakt?kurs=Personal%20Training">Kontakt aufnehmen</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight end" id="ansatz">
+    <div class="wrap stack">
+      <h2>Unser ganzheitlicher Ansatz</h2>
+      <div class="duo">
+        <a href="/kontakt?kurs=Sauna"><div class="ph"><img src="https://static.wixstatic.com/media/6b26aa_9260a64838ac4b3d9c4d07cf48f8f989~mv2.png/v1/fill/w_1100,h_320,al_c,q_90/6b26aa_9260a64838ac4b3d9c4d07cf48f8f989~mv2.png" alt="Sauna" loading="lazy"></div><div class="row"><p class="title16">Sauna</p><span class="arrow">→</span></div></a>
+        <a href="/kontakt?kurs=Ern%C3%A4hrungsberatung"><div class="ph"><img src="https://static.wixstatic.com/media/6b26aa_28d6a5dbe4a247948dfbe73106c7f7ab~mv2.png/v1/fill/w_1100,h_320,al_c,q_90/6b26aa_28d6a5dbe4a247948dfbe73106c7f7ab~mv2.png" alt="Ernährungsberatung" loading="lazy"></div><div class="row"><p class="title16">Ernährungs<wbr />beratung</p><span class="arrow">→</span></div></a>
+      </div>
+    </div>
+  </section>
+  <script is:inline slot="scripts">
+    // Stundenplan: heutigen Tag vorauswählen (mobil Tages-Tabs, Desktop Wochenansicht).
+    (function () {
+      var DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+      var today = DAYS[(new Date().getDay() + 6) % 7];
+      var buttons = document.querySelectorAll(".days .day");
+      function show(day) {
+        buttons.forEach(function (b) { b.setAttribute("aria-selected", b.dataset.day === day ? "true" : "false"); });
+        document.querySelectorAll("[data-slots]").forEach(function (el) { el.hidden = el.dataset.slots !== day; });
+      }
+      buttons.forEach(function (b) { b.addEventListener("click", function () { show(b.dataset.day); }); });
+      var t = document.querySelector('[data-week="' + today + '"]'); if (t) t.classList.add("today");
+      show(today);
+    })();
+  </script>
+</Layout>
