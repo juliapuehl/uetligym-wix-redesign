@@ -11,12 +11,19 @@ const [start] = await safe(queryCollection("Startseite", { sort: [{ fieldName: "
 let hero = mediaOf(start?.heroMedium);
 if (hero?.kind === "image" && hero.src.includes(FALLBACK_ID)) hero = null;
 
-// Karten-Slider unter "Unser Ansatz" (mobil). Die mittlere Karte ist der aktive Link.
+// Karten-Karussell unter "Unser Ansatz" (mobil, GSAP Flip). Die mittlere Karte ist der aktive Link.
+// Lange Wörter haben einen weichen Trennstrich (­), damit sie auf schmalen Karten sauber umbrechen statt abgeschnitten zu werden.
 const ansatz = [
   { label: "Events", href: "/community#events" },
   { label: "Sauna", href: "/angebot#ansatz" },
-  { label: "Ernährung", href: "/angebot#ansatz" },
+  { label: "Ernäh­rung", href: "/angebot#ansatz" },
+  { label: "Mental Training", href: "/angebot#ansatz" },
+  { label: "Personal Training", href: "/angebot#personal-training" },
+  { label: "Gruppen­kurse", href: "/angebot#gruppenkurse" },
+  { label: "Open Gym", href: "/angebot#stundenplan" },
+  { label: "Blog", href: "/blog" },
 ];
+const slotOf = (i: number) => (i === 0 ? "is-prev" : i === 1 ? "is-active" : i === 2 ? "is-next" : "");
 ---
 <Layout nav="home">
   <section class="hero">
@@ -107,14 +114,12 @@ const ansatz = [
       <div class="split-text">
         <h2>Unser Ansatz – mehr als nur Gewichte</h2>
         <p class="body dark">Wir denken Training ganzheitlich: Bewegung, Erholung und Ernährung gehören zusammen.</p>
-        <div class="card-slider only-m" data-items={JSON.stringify(ansatz)}>
-          <button class="cs-arrow" type="button" data-step="-1" aria-label="Vorherige Karte"><img src="/assets/home/chevron-left.svg" width="24" height="24" alt=""></button>
+        <div class="card-slider only-m">
           <div class="cs-track">
-            <button class="cs-card cs-side" type="button" data-step="-1" tabindex="-1" aria-hidden="true">{ansatz[0].label}</button>
-            <button class="cs-card cs-side" type="button" data-step="1" tabindex="-1" aria-hidden="true">{ansatz[2].label}</button>
-            <a class="cs-card cs-main" href={ansatz[1].href} aria-live="polite">{ansatz[1].label}</a>
+            {ansatz.map((c, i) => (
+              <a class={`cs-card ${slotOf(i)}`} href={c.href} tabindex={i === 1 ? undefined : "-1"} aria-hidden={i === 1 ? undefined : "true"}>{c.label}</a>
+            ))}
           </div>
-          <button class="cs-arrow" type="button" data-step="1" aria-label="Nächste Karte"><img src="/assets/home/chevron-right.svg" width="24" height="24" alt=""></button>
         </div>
         <div class="inline-links only-d">
           <a href="/angebot#ansatz">Sauna →</a>
@@ -168,28 +173,108 @@ const ansatz = [
     </div>
   </section>
 
-  <script is:inline slot="scripts">
-    // Karten-Slider "Unser Ansatz": Pfeile oder Seitenkarten drehen die Karten, die mittlere ist der Link.
-    (function () {
-      var slider = document.querySelector(".card-slider");
-      if (!slider) return;
-      var items = JSON.parse(slider.getAttribute("data-items"));
-      var sides = slider.querySelectorAll(".cs-side");
-      var main = slider.querySelector(".cs-main");
-      var cur = 1;
-      function at(i) { return items[(i + items.length) % items.length]; }
-      function render() {
-        sides[0].textContent = at(cur - 1).label;
-        sides[1].textContent = at(cur + 1).label;
-        main.textContent = at(cur).label;
-        main.setAttribute("href", at(cur).href);
-      }
-      slider.addEventListener("click", function (e) {
-        var btn = e.target.closest("[data-step]");
-        if (!btn) return;
-        cur = (cur + Number(btn.getAttribute("data-step")) + items.length) % items.length;
-        render();
+  <script>
+    // Flip-Karussell "Unser Ansatz": Autoplay, Seitenkarten, Wischen oder Pfeiltasten drehen die Karten.
+    // Jede Karte hat eine Slot-Klasse (is-prev / is-active / is-next, sonst versteckt); GSAP Flip animiert den Wechsel.
+    import { gsap } from "gsap";
+    import { Flip } from "gsap/Flip";
+
+    gsap.registerPlugin(Flip);
+
+    const slider = document.querySelector(".card-slider");
+    if (slider) {
+      const track = slider.querySelector(".cs-track");
+      const cards = gsap.utils.toArray(".cs-card", slider);
+      const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 0.6;
+      const SLOTS = ["is-prev", "is-active", "is-next"];
+      const at = (i) => cards[(i + cards.length) % cards.length];
+      const slotOf = (c) => SLOTS.find((s) => c.classList.contains(s));
+      let cur = cards.findIndex((c) => c.classList.contains("is-active"));
+
+      // Karte, die aus dem sichtbaren Bereich fällt: bleibt kurz in ihrem alten Slot und blendet aus.
+      const resetLeaving = (c) => {
+        gsap.killTweensOf(c);
+        c.classList.remove("is-leaving", ...SLOTS);
+        gsap.set(c, { clearProps: "opacity,scale" });
+      };
+
+      const show = (i) => {
+        cards.filter((c) => c.classList.contains("is-leaving")).forEach(resetLeaving);
+        // vor dem Klassenwechsel merken: die alte aktive Karte wird kurz ausgeblendet und verliert dabei den Fokus
+        const hadFocus = slider.contains(document.activeElement);
+        const state = Flip.getState(cards, { props: "backgroundColor,color,fontSize,boxShadow" });
+        const before = new Map(cards.map((c) => [c, slotOf(c)]));
+        cur = (i + cards.length) % cards.length;
+        cards.forEach((c) => {
+          c.classList.remove(...SLOTS);
+          c.setAttribute("tabindex", "-1");
+          c.setAttribute("aria-hidden", "true");
+        });
+        at(cur - 1).classList.add("is-prev");
+        at(cur + 1).classList.add("is-next");
+        const active = at(cur);
+        active.classList.add("is-active");
+        active.removeAttribute("tabindex");
+        active.removeAttribute("aria-hidden");
+        if (hadFocus) active.focus({ preventScroll: true });
+
+        const leaving = cards.filter((c) => before.get(c) && !slotOf(c));
+        leaving.forEach((c) => {
+          c.classList.add(before.get(c), "is-leaving");
+          gsap.to(c, { opacity: 0, scale: 0.6, duration, onComplete: () => resetLeaving(c) });
+        });
+        Flip.from(state, {
+          targets: cards.filter((c) => !leaving.includes(c)),
+          duration,
+          ease: "power3.inOut",
+          onEnter: (els) => gsap.fromTo(els, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration }),
+        });
+      };
+
+      // Autoplay: alle INTERVAL Sekunden eine Karte weiter, endlos. Pausiert bei Berührung, Hover, Fokus und ausserhalb des Bildschirms;
+      // nach einer Interaktion beginnt die Wartezeit neu. Bei "Bewegung reduzieren" kein Autoplay.
+      const INTERVAL = 2;
+      let timer = null;
+      let paused = false;
+      let visible = false;
+      const schedule = () => {
+        if (timer) timer.kill();
+        timer = null;
+        if (!duration || paused || !visible) return;
+        timer = gsap.delayedCall(INTERVAL, () => { show(cur + 1); schedule(); });
+      };
+      const pause = () => { paused = true; schedule(); };
+      const resume = () => { paused = false; schedule(); };
+      new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; schedule(); }).observe(slider);
+      slider.addEventListener("pointerenter", pause);
+      slider.addEventListener("pointerleave", resume);
+      // nur Tastaturfokus pausiert (nach einem Tipp bleibt die Karte fokussiert, das soll Autoplay nicht stoppen)
+      slider.addEventListener("focusin", (e) => { if (e.target.matches(":focus-visible")) pause(); });
+      slider.addEventListener("focusout", resume);
+      slider.addEventListener("keydown", (e) => {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        e.preventDefault();
+        show(cur + (e.key === "ArrowRight" ? 1 : -1));
       });
-    })();
+
+      slider.addEventListener("click", (e) => {
+        const card = e.target.closest(".cs-card");
+        if (card && !card.classList.contains("is-active")) {
+          e.preventDefault();
+          show(cards.indexOf(card));
+          schedule();
+        }
+      });
+
+      let x0 = null;
+      track.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; pause(); }, { passive: true });
+      track.addEventListener("touchend", (e) => {
+        if (x0 === null) return;
+        const dx = e.changedTouches[0].clientX - x0;
+        x0 = null;
+        if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1));
+        resume();
+      });
+    }
   </script>
 </Layout>
