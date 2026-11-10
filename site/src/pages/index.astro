@@ -1,6 +1,7 @@
 ---
 // Startseite. Das Hero-Bild oder -Video kommt aus dem CMS (Dashboard → CMS → "Startseite" → Feld "Hero-Bild oder -Video").
 // Ohne Eintrag bleibt das Standardbild stehen.
+// Mobile Ansicht nach Figma "Home – Hi-Fi Mobile" (UETLIGYM, Node 603:2689); Bilder dazu liegen in public/assets/home/.
 import Layout from "../layouts/Layout.astro";
 import Media from "../components/Media.astro";
 import { queryCollection, mediaOf, safe } from "../lib/wix";
@@ -9,19 +10,28 @@ const FALLBACK_ID = "6b26aa_a794100dd6234b1b833e96c5b5d50cc3~mv2.png";
 const [start] = await safe(queryCollection("Startseite", { sort: [{ fieldName: "_createdDate", order: "ASC" }], paging: { limit: 1, offset: 0 } }), []);
 let hero = mediaOf(start?.heroMedium);
 if (hero?.kind === "image" && hero.src.includes(FALLBACK_ID)) hero = null;
+
+// Karten-Slider unter "Unser Ansatz" (mobil). Die mittlere Karte ist der aktive Link.
+const ansatz = [
+  { label: "Events", href: "/community#events" },
+  { label: "Sauna", href: "/angebot#ansatz" },
+  { label: "Ernährung", href: "/angebot#ansatz" },
+];
 ---
 <Layout nav="home">
   <section class="hero">
-    <div class="wrap stack">
-      <div class="hero-card">
-        {hero ? <Media media={hero} w={750} h={400} class="bg" alt="Training im Uetligym" /> : <img class="bg" src="https://static.wixstatic.com/media/6b26aa_e1c3527e935a474d90397ea48e8160ea~mv2.png" alt="Training im Uetligym" />}
-        <div class="logo-line" aria-hidden="true"><img src="https://static.wixstatic.com/media/6b26aa_4f6edce5f0d0420f87c155028778ed75~mv2.png" alt=""></div>
-        <h1 class="claim"><span class="top">Stronger Together</span><span class="bottom">Healthier for Life</span></h1>
+    <div class="hero-m">
+      <div class="hero-img">
+        {hero ? <Media media={hero} w={750} h={660} class="bg" alt="Training im Uetligym" /> : <img class="bg" src="https://static.wixstatic.com/media/6b26aa_e1c3527e935a474d90397ea48e8160ea~mv2.png" alt="Training im Uetligym" />}
+        <div class="logo-line" aria-hidden="true"><img src="/assets/home/logo-line.png" alt=""></div>
+        <div class="btn-row hero-btns">
+          <a class="btn deal" href="/preise#newcomer">Welcome Deal</a>
+          <a class="btn special" href="/angebot#stundenplan">Stundenplan</a>
+        </div>
       </div>
-      <p class="intro-text">Gruppenkurse, Personal Training und Sauna in einer Community, die dich weiterbringt.</p>
-      <div class="btn-row">
-        <a class="btn oak-dark-text" href="/preise#newcomer">Newcomer Offer</a>
-        <a class="btn turq" href="/angebot#stundenplan">Stundenplan</a>
+      <div class="wrap hero-text">
+        <p class="intro-text">Wir bieten ganzheitliche Fitness und massgeschneidertes Training. Unser Ziel ist es, dich auf deiner Fitnessreise zu begleiten und dir dabei zu helfen, deine Ziele zu erreichen.</p>
+        <h1 class="claim">Stronger together -<br>healthier for life.</h1>
       </div>
     </div>
     <div class="hero-d only-d" aria-hidden="true">
@@ -38,56 +48,79 @@ if (hero?.kind === "image" && hero.src.includes(FALLBACK_ID)) hero = null;
     </div>
   </section>
 
-  <section class="section" style="padding-bottom:16px">
+  <section class="section studio">
     <div class="wrap stack">
       <h2>Entdecke unser Studio</h2>
       <div class="row-scroll">
-        <a class="tile" href="/angebot#gruppenkurse"><div class="ph"><img src="https://static.wixstatic.com/media/6b26aa_982cb37804044006963b429ca5f8e62e~mv2.png/v1/fill/w_400,h_300,al_c,q_90/6b26aa_982cb37804044006963b429ca5f8e62e~mv2.png" alt="" loading="lazy"></div><span class="cap">Gruppenkurse</span></a>
-        <a class="tile" href="/angebot#stundenplan"><div class="ph"><img src="https://static.wixstatic.com/media/6b26aa_96daba5409fe477a96e81053b58a52d8~mv2.png/v1/fill/w_400,h_300,al_c,q_90/6b26aa_96daba5409fe477a96e81053b58a52d8~mv2.png" alt="" loading="lazy"></div><span class="cap">Open Gym</span></a>
-        <a class="tile" href="/angebot#ansatz"><div class="ph"><img src="https://static.wixstatic.com/media/6b26aa_9260a64838ac4b3d9c4d07cf48f8f989~mv2.png/v1/fill/w_400,h_300,al_c,q_90/6b26aa_9260a64838ac4b3d9c4d07cf48f8f989~mv2.png" alt="" loading="lazy"></div><span class="cap">Sauna</span></a>
-        <a class="tile" href="/angebot#personal-training"><div class="ph"><img src="https://static.wixstatic.com/media/6b26aa_7dc831949e474998832dd820df5886a5~mv2.png/v1/fill/w_400,h_300,al_c,q_90/6b26aa_7dc831949e474998832dd820df5886a5~mv2.png" alt="" loading="lazy"></div><span class="cap">Personal Training</span></a>
-        <a class="tile" href="/angebot#ansatz"><div class="ph"><img src="https://static.wixstatic.com/media/6b26aa_28d6a5dbe4a247948dfbe73106c7f7ab~mv2.png/v1/fill/w_400,h_300,al_c,q_90/6b26aa_28d6a5dbe4a247948dfbe73106c7f7ab~mv2.png" alt="" loading="lazy"></div><span class="cap">Ernährungs<wbr />beratung</span></a>
-        <a class="tile" href="/angebot#gruppenkurse"><div class="ph"><img src="https://static.wixstatic.com/media/6b26aa_e7d3c4ce5b25448aae71f5dbc605e3a4~mv2.png/v1/fill/w_400,h_300,al_c,q_90/6b26aa_e7d3c4ce5b25448aae71f5dbc605e3a4~mv2.png" alt="" loading="lazy"></div><span class="cap">Hyrox</span></a>
+        <a class="tile" href="/angebot#gruppenkurse"><div class="ph"><img src="/assets/home/tile-gruppenkurse.jpg" alt="" loading="lazy"></div><span class="cap">Gruppenkurse</span></a>
+        <a class="tile" href="/angebot#stundenplan"><div class="ph"><img src="/assets/home/tile-open-gym.jpg" alt="" loading="lazy"></div><span class="cap">Open Gym</span></a>
+        <a class="tile" href="/angebot#personal-training"><div class="ph"><img src="/assets/home/tile-personal-training.jpg" alt="" loading="lazy"></div><span class="cap">Personal Training</span></a>
+        <a class="tile narrow" href="/angebot#ansatz"><div class="ph"><img src="/assets/home/tile-sauna.jpg" alt="" loading="lazy"></div><span class="cap">Sauna</span></a>
+        <a class="tile narrow" href="/angebot#ansatz"><div class="ph"><img src="/assets/home/tile-ernaehrung.jpg" alt="" loading="lazy" style="object-position:50% 15%"></div><span class="cap">Ernährungs<wbr />beratung</span></a>
+        <div class="tile narrow"><div class="ph oak"></div><span class="cap">Mental Training</span></div>
       </div>
     </div>
   </section>
 
-  <section class="section tight">
+  <section class="success">
+    <img class="bg" src="/assets/home/text-section-bg.png" alt="" aria-hidden="true" loading="lazy">
+    <div class="wrap">
+      <div class="success-card">
+        <h2>Dein Erfolg ist unser Ziel.</h2>
+        <div class="success-text">
+          <p>Wir bieten ganzheitliche Fitness und massgeschneidertes Training.</p>
+          <p>Unsere hoch qualifizierten Trainer arbeiten eng mit dir zusammen, um deine Stärken zu erkennen und Bereiche zu verbessern, an denen du arbeiten möchtest.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section trainings-section">
     <div class="wrap stack">
       <h2>Training, das in dein Leben passt – nicht umgekehrt</h2>
       <div class="trainings">
         <div class="list-item">
-          <div class="ph"><picture><source media="(min-width: 900px)" srcset="https://static.wixstatic.com/media/6b26aa_e1c3527e935a474d90397ea48e8160ea~mv2.png/v1/fill/w_740,h_440,al_c,q_90/6b26aa_e1c3527e935a474d90397ea48e8160ea~mv2.png"><img src="https://static.wixstatic.com/media/6b26aa_afbdc0b670904102bdb16a7ce3a461a9~mv2.png/v1/fill/w_128,h_96,al_c,q_90/6b26aa_afbdc0b670904102bdb16a7ce3a461a9~mv2.png" alt="Hyrox Simulation" loading="lazy"></picture></div>
-          <div class="txt"><p class="title16">Hyrox Simulation</p><span class="meta">60 Min · Alle Levels</span></div>
+          <div class="ph"><picture><source media="(min-width: 900px)" srcset="https://static.wixstatic.com/media/6b26aa_e1c3527e935a474d90397ea48e8160ea~mv2.png/v1/fill/w_740,h_440,al_c,q_90/6b26aa_e1c3527e935a474d90397ea48e8160ea~mv2.png"><img src="/assets/home/kurs-hyrox.jpg" alt="Hyrox" loading="lazy"></picture></div>
+          <div class="txt"><p class="title16">Hyrox</p><span class="meta">60 Min · Alle Levels · täglich</span></div>
         </div>
         <div class="list-item">
-          <div class="ph"><picture><source media="(min-width: 900px)" srcset="https://static.wixstatic.com/media/6b26aa_7d367f055154403bad909630d829a469~mv2.png/v1/fill/w_740,h_440,al_c,q_90/6b26aa_7d367f055154403bad909630d829a469~mv2.png"><img src="https://static.wixstatic.com/media/6b26aa_b64f9537efd64d26b649c899d25c3424~mv2.png/v1/fill/w_128,h_96,al_c,q_90/6b26aa_b64f9537efd64d26b649c899d25c3424~mv2.png" alt="Strength Basics" loading="lazy"></picture></div>
-          <div class="txt"><p class="title16">Strength Basics</p><span class="meta">60 Min · Alle Levels</span></div>
+          <div class="ph"><picture><source media="(min-width: 900px)" srcset="https://static.wixstatic.com/media/6b26aa_7d367f055154403bad909630d829a469~mv2.png/v1/fill/w_740,h_440,al_c,q_90/6b26aa_7d367f055154403bad909630d829a469~mv2.png"><img src="/assets/home/kurs-strength.jpg" alt="Strength" loading="lazy"></picture></div>
+          <div class="txt"><p class="title16">Strength</p><span class="meta">60 Min · Alle Levels · Di/Mi/Fr</span></div>
         </div>
-        <div class="list-item only-d">
-          <div class="ph shade"><img src="https://static.wixstatic.com/media/6b26aa_b04e77e3c1f840b5aa883cf4cf88a715~mv2.png/v1/fill/w_740,h_440,al_c,q_90/6b26aa_b04e77e3c1f840b5aa883cf4cf88a715~mv2.png" alt="Kettlebells &amp; More" loading="lazy"></div>
-          <div class="txt"><p class="title16">Kettlebells &amp; More</p><span class="meta">60 Min · Alle Levels</span></div>
+        <div class="list-item">
+          <div class="ph"><picture><source media="(min-width: 900px)" srcset="https://static.wixstatic.com/media/6b26aa_b04e77e3c1f840b5aa883cf4cf88a715~mv2.png/v1/fill/w_740,h_440,al_c,q_90/6b26aa_b04e77e3c1f840b5aa883cf4cf88a715~mv2.png"><img src="/assets/home/kurs-hyrox.jpg" alt="Functional Fitness" loading="lazy"></picture></div>
+          <div class="txt"><p class="title16">Functional Fitness</p><span class="meta">60 Min · Alle Levels · mittwochs</span></div>
         </div>
       </div>
-      <div class="stack only-m" style="gap:6px">
-        <a class="link-turq" href="/angebot">Alle Kurse →</a>
-        <a style="color:var(--accent-color-turquoise);font-weight:600" href="/preise#newcomer">Not sure where to start? Get our <strong style="font-weight:800;color:var(--error-color)">Newcomer Offer</strong> →</a>
-      </div>
+      <a class="btn tertiary only-m" href="/angebot">Alle Kurse <span aria-hidden="true">→</span></a>
       <div class="trainings-more only-d"><a class="link-turq" href="/angebot">Alle Kurse →</a></div>
+      <div class="cta-deal only-m">
+        <p>Du bist neu und bereit durchzustarten?<br>Hol dir unseren</p>
+        <a class="btn deal lg" href="/preise#newcomer">Welcome Deal</a>
+      </div>
     </div>
   </section>
 
   <section class="section tight">
     <div class="wrap split">
-      <div class="ph wide"><img src="https://static.wixstatic.com/media/6b26aa_9260a64838ac4b3d9c4d07cf48f8f989~mv2.png" alt="Sauna im Uetligym" loading="lazy"></div>
+      <div class="ph wide"><img src="/assets/home/tile-sauna.jpg" alt="Sauna im Uetligym" loading="lazy"></div>
       <div class="split-text">
         <h2>Unser Ansatz – mehr als nur Gewichte</h2>
-        <p class="body">Wir denken Training ganzheitlich: Bewegung, Erholung und Ernährung gehören zusammen.</p>
-        <div class="inline-links">
-          <a href="/angebot#ansatz"><span class="only-m">Sauna ·</span><span class="only-d">Sauna →</span></a>
-          <a href="/angebot#ansatz"><span class="only-m">Ernährung ·</span><span class="only-d">Ernährungsberatung →</span></a>
-          <a href="/community#events"><span class="only-m">Events ·</span><span class="only-d">Events →</span></a>
-          <a href="/blog"><span class="only-m">Blog →</span><span class="only-d">Zum Blog →</span></a>
+        <p class="body dark">Wir denken Training ganzheitlich: Bewegung, Erholung und Ernährung gehören zusammen.</p>
+        <div class="card-slider only-m" data-items={JSON.stringify(ansatz)}>
+          <button class="cs-arrow" type="button" data-step="-1" aria-label="Vorherige Karte"><img src="/assets/home/chevron-left.svg" width="24" height="24" alt=""></button>
+          <div class="cs-track">
+            <button class="cs-card cs-side" type="button" data-step="-1" tabindex="-1" aria-hidden="true">{ansatz[0].label}</button>
+            <button class="cs-card cs-side" type="button" data-step="1" tabindex="-1" aria-hidden="true">{ansatz[2].label}</button>
+            <a class="cs-card cs-main" href={ansatz[1].href} aria-live="polite">{ansatz[1].label}</a>
+          </div>
+          <button class="cs-arrow" type="button" data-step="1" aria-label="Nächste Karte"><img src="/assets/home/chevron-right.svg" width="24" height="24" alt=""></button>
+        </div>
+        <div class="inline-links only-d">
+          <a href="/angebot#ansatz">Sauna →</a>
+          <a href="/angebot#ansatz">Ernährungsberatung →</a>
+          <a href="/community#events">Events →</a>
+          <a href="/blog">Zum Blog →</a>
         </div>
         <div class="newcomer only-d">
           <p>Nicht sicher, wo du anfangen sollst?</p>
@@ -97,21 +130,21 @@ if (hero?.kind === "image" && hero.src.includes(FALLBACK_ID)) hero = null;
     </div>
   </section>
 
-  <section class="band section trainers" style="padding-bottom:16px">
-    <img class="bg" src="https://static.wixstatic.com/media/6b26aa_4e74176bd41545c58105a8244b997d01~mv2.png" alt="" aria-hidden="true">
+  <section class="band section trainers">
+    <img class="bg" src="/assets/home/trainer-bg.png" alt="" aria-hidden="true">
     <div class="wrap stack">
       <h2>Unsere Trainer</h2>
-      <div class="avatars">
-        <img src="https://static.wixstatic.com/media/6b26aa_74b7d89b875046b2a37ca2fad1306a2d~mv2.png" alt="Trainer" loading="lazy">
-        <img src="https://static.wixstatic.com/media/6b26aa_defdab8eb794462a977afedf4683e28d~mv2.png" alt="Trainer" loading="lazy">
-        <img src="https://static.wixstatic.com/media/6b26aa_03b71ef71b484df5a235a1df04fa5251~mv2.png" alt="Trainerin" loading="lazy">
-        <img src="https://static.wixstatic.com/media/6b26aa_8d3dfe2d686f4fafa372ee7eb7c1a469~mv2.png" alt="Trainer" loading="lazy">
-        <img src="https://static.wixstatic.com/media/6b26aa_1040387c2e664ced888c68800842addc~mv2.png" alt="Trainerin" loading="lazy">
+      <div class="avatars lg">
+        <img src="/assets/home/trainer-1.png" width="90" height="90" alt="Trainer:in" loading="lazy">
+        <img src="/assets/home/trainer-2.png" width="90" height="90" alt="Trainer:in" loading="lazy">
+        <img src="/assets/home/trainer-3.png" width="90" height="90" alt="Trainer:in" loading="lazy">
+        <img src="/assets/home/trainer-4.png" width="90" height="90" alt="Trainer:in" loading="lazy">
+        <img src="/assets/home/trainer-5.png" width="90" height="90" alt="Trainer:in" loading="lazy">
       </div>
     </div>
   </section>
 
-  <section class="section tight end">
+  <section class="section home-pad">
     <div class="wrap stack">
       <h2>Kunden Reviews – 5.0 ★ (48)</h2>
       <div class="reviews">
@@ -122,4 +155,41 @@ if (hero?.kind === "image" && hero.src.includes(FALLBACK_ID)) hero = null;
       </div>
     </div>
   </section>
+
+  <section class="section home-pad">
+    <div class="wrap stack">
+      <h2>Warum Uetligym</h2>
+      <div class="why home">
+        <div class="check"><span class="tick">✓</span><div><p class="title16">Moderne Geräte</p><span class="sub">Top ausgestattetes Studio</span></div></div>
+        <div class="check"><span class="tick">✓</span><div><p class="title16">Echte Community</p><span class="sub">Nie allein trainieren</span></div></div>
+        <div class="check"><span class="tick">✓</span><div><p class="title16">Flexible Preise</p><span class="sub">Token statt starrer Abos</span></div></div>
+        <div class="check"><span class="tick">✓</span><div><p class="title16">Erfahrene Trainer</p><span class="sub">Individuelle Betreuung</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <script is:inline slot="scripts">
+    // Karten-Slider "Unser Ansatz": Pfeile oder Seitenkarten drehen die Karten, die mittlere ist der Link.
+    (function () {
+      var slider = document.querySelector(".card-slider");
+      if (!slider) return;
+      var items = JSON.parse(slider.getAttribute("data-items"));
+      var sides = slider.querySelectorAll(".cs-side");
+      var main = slider.querySelector(".cs-main");
+      var cur = 1;
+      function at(i) { return items[(i + items.length) % items.length]; }
+      function render() {
+        sides[0].textContent = at(cur - 1).label;
+        sides[1].textContent = at(cur + 1).label;
+        main.textContent = at(cur).label;
+        main.setAttribute("href", at(cur).href);
+      }
+      slider.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-step]");
+        if (!btn) return;
+        cur = (cur + Number(btn.getAttribute("data-step")) + items.length) % items.length;
+        render();
+      });
+    })();
+  </script>
 </Layout>
